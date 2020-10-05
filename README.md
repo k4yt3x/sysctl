@@ -23,6 +23,12 @@ Please be careful that this `sysctl.conf` is **designed for endpoint hosts that 
 1. Overwrite the old `sysctl.conf` file with the downloaded `sysctl.conf` file
 1. Run command `sudo sysctl -p` or reboot the system to apply the changes
 
+For convenience, I have pointed the URL `https://akas.io/sysctl` to the `sysctl.conf` file. You may therefore download the `sysctl.conf` file with the following command. However, be sure to check the integrity of the file after downloading it if you choose to download using this method.
+
+```shell
+curl -sSL akas.io/sysctl -o sysctl.conf
+```
+
 ## `sysctl.conf` Content
 
 ```properties
