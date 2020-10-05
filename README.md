@@ -1,17 +1,36 @@
-# K4YT3X's hardened `sysctl.conf`
+# K4YT3X's Hardened sysctl Configuration
 
-This repository hosts my hardened version of `sysctl.conf`. This configuration file aims to provide better security for Linux systems, and improves system performance whenever possible.
+This repository hosts my hardened version of `sysctl.conf`. This configuration file aims to provide better security for Linux systems, and improves system performance whenever possible. For example, below are some of the features this configuration file provies.
+
+- Prevents kernel pointers from being read
+- Disables Ptrace for all programs
+- Disallows core dumping by SUID/GUID programs
+- Disables IPv4/IPv6 routing
+- Enables BBR TCP congestion control
+- Enables SYN cookies to mitigate SYN flooding attacks
+- Enables IP reverse path filtering for source validation
+- ...
 
 **Please review the configuration file carefully before applying it.** You are responsible for actions done to your own system.
 
 Please be careful that this `sysctl.conf` is **designed for endpoint hosts that do not act as a router**. If you would like to use this configuration file on a router, please go over the configuration file and make necessary changes.
+
+## Usages
+
+1. Download the file `sysctl.conf` from the repository
+1. Review the content of the `sysctl.conf` file to make sure all settings are suitable for your system
+1. Backup your current `/etc/sysctl.conf` file (e.g., `cp /etc/sysctl.conf /etc/sysctl.conf.backup`)
+1. Overwrite the old `sysctl.conf` file with the downloaded `sysctl.conf` file
+1. Run command `sudo sysctl -p` or reboot the system to apply the changes
+
+## `sysctl.conf` Content
 
 ```properties
 # Name: K4YT3X Hardened sysctl Configuration
 # Author: K4YT3X
 # Date Created: October 5, 2020
 # Last Updated: October 5, 2020
-# Version 1.0
+# Version: 1.0
 
 # Licensed under the GNU General Public License Version 3 (GNU GPL v3),
 #   available at: https://www.gnu.org/licenses/gpl-3.0.txt
