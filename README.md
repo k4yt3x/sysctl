@@ -11,6 +11,7 @@ Please be careful that this `sysctl.conf` is **designed for endpoint hosts that 
 # Author: K4YT3X
 # Date Created: October 5, 2020
 # Last Updated: October 5, 2020
+# Version 1.0
 
 # Licensed under the GNU General Public License Version 3 (GNU GPL v3),
 #   available at: https://www.gnu.org/licenses/gpl-3.0.txt
