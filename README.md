@@ -11,7 +11,7 @@ This repository hosts my hardened version of `sysctl.conf`. This configuration f
 - Enables IP reverse path filtering for source validation
 - ...
 
-**Please review the configuration file carefully before applying it.** You are responsible for actions done to your own system.
+**Please review the configuration file carefully before applying it.** You are responsible for actions done to your own system. If you need some guidance understanding what each of the settings are for, [sysctl-explorer](https://sysctl-explorer.net/) might come in handy.
 
 Please be careful that this `sysctl.conf` is **designed for endpoint hosts that do not act as a router**. If you would like to use this configuration file on a router, please go over the configuration file and make necessary changes.
 
