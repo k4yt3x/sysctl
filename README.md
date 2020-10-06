@@ -52,8 +52,8 @@ curl -sSL akas.io/sysctl -o sysctl.conf
 # Name: K4YT3X Hardened sysctl Configuration
 # Author: K4YT3X
 # Date Created: October 5, 2020
-# Last Updated: October 5, 2020
-# Version: 1.0
+# Last Updated: October 6, 2020
+# Version: 1.1
 
 # Licensed under the GNU General Public License Version 3 (GNU GPL v3),
 #   available at: https://www.gnu.org/licenses/gpl-3.0.txt
@@ -93,6 +93,18 @@ kernel.kptr_restrict = 2
 #   - 3: disables ptrace completely, reboot is required to re-enable ptrace
 kernel.yama.ptrace_scope = 3
 
+# restrict kernel logs to root only
+kernel.dmesg_restrict = 1
+
+# restrict BPF JIT compiler to root only
+kernel.unprivileged_bpf_disabled = 1
+
+# disables kexec as it can be used to livepatch the running kernel
+kernel.kexec_load_disabled = 1
+
+# disable unprivileged user namespaces to decrease attack surface
+kernel.unprivileged_userns_clone = 0
+
 # allow for more PIDs
 kernel.pid_max = 65536
 
@@ -116,8 +128,36 @@ fs.protected_hardlinks = 1
 #   - the owner of the directory is also the owner of the symbolic link
 fs.protected_symlinks = 1
 
+# enable extended FIFO protection
+fs.protected_fifos = 2
+
+# similar to protected_fifos, but it avoids writes to an attacker-controlled regular file
+fs.protected_regular = 2
+
 # increase system file descriptor limit
 fs.file-max = 65535
+
+########## Virtualization ##########
+
+# improve mmap ASLR effectness
+vm.mmap_rnd_bits=32
+vm.mmap_rnd_compat_bits=16
+
+########## Networking ##########
+
+# increase the maximum length of processor input queues
+net.core.netdev_max_backlog = 250000
+
+# enable BPF JIT hardening for all users
+# this trades off performance, but can mitigate JIT spraying
+net.core.bpf_jit_harden = 2
+
+# increase TCP max buffer size setable using setsockopt()
+#net.core.rmem_max = 8388608
+#net.core.wmem_max = 8388608
+#net.core.rmem_default = 8388608
+#net.core.wmem_default = 8388608
+#net.core.optmem_max = 8388608
 
 ########## IPv4 Networking ##########
 
@@ -147,31 +187,42 @@ net.ipv4.conf.default.rp_filter = 1
 net.ipv4.conf.all.rp_filter = 1
 
 # log packets with impossible addresses to kernel log
-net.ipv4.conf.all.log_martians = 1
 net.ipv4.conf.default.log_martians = 1
+net.ipv4.conf.all.log_martians = 1
 
 # do not accept ICMP redirect messages
 net.ipv4.conf.default.accept_redirects = 0
-net.ipv4.conf.all.accept_redirects = 0
 net.ipv4.conf.default.secure_redirects = 0
+net.ipv4.conf.all.accept_redirects = 0
 net.ipv4.conf.all.secure_redirects = 0
 
 # disable sending and receiving of shared media redirects
 # this setting overwrites net.ipv4.conf.all.secure_redirects
 # refer to RFC1620
+net.ipv4.conf.default.shared_media = 0
 net.ipv4.conf.all.shared_media = 0
 
-# ignore all ICMP ECHO and TIMESTAMP requests sent to broadcast/multicast
+# always use the best local address for announcing local IP via ARP
+net.ipv4.conf.default.arp_announce = 2
+net.ipv4.conf.all.arp_announce = 2
+
+# reply only if the target IP address is local address configured on the incoming interface
+net.ipv4.conf.default.arp_ignore = 1
+net.ipv4.conf.all.arp_ignore = 1
+
+# drop Gratuitous ARP frames to prevent ARP poisoning
+# this can cause issues when ARP proxies are used in the network
+net.ipv4.conf.default.drop_gratuitous_arp = 1
+net.ipv4.conf.all.drop_gratuitous_arp = 1
+
+# ignore all ICMP echo requests
+#net.ipv4.icmp_echo_ignore_all = 1
+
+# ignore all ICMP echo and timestamp requests sent to broadcast/multicast
 net.ipv4.icmp_echo_ignore_broadcasts = 1
 
 # ignore bad ICMP errors
 net.ipv4.icmp_ignore_bogus_error_responses = 1
-
-# always use the best local address for announcing local IP via ARP
-net.ipv4.conf.all.arp_announce = 2
-
-# reply only if the target IP address is local address configured on the incoming interface
-net.ipv4.conf.all.arp_ignore = 1
 
 # mitigate TIME-WAIT Assassination hazards in TCP
 # refer to RFC1337
@@ -187,49 +238,57 @@ net.ipv4.ip_local_port_range = 2000 65000
 # disable TCP timestamps for better CPU utilization
 net.ipv4.tcp_timestamps = 0
 
-# enable TCP selective ACKs for better throughput
-net.ipv4.tcp_sack = 1
+# enabling SACK can increase the throughput
+# but SACK is commonly exploited and rarely used
+net.ipv4.tcp_sack = 0
 
 # divide socket buffer evenly between TCP window size and application
 net.ipv4.tcp_adv_win_scale = 1
-
-# increase the maximum length of processor input queues
-net.core.netdev_max_backlog = 250000
 
 # increase memory thresholds to prevent packet dropping
 #net.ipv4.tcp_rmem = 4096 87380 8388608
 #net.ipv4.tcp_wmem = 4096 87380 8388608
 
-# increase TCP max buffer size setable using setsockopt()
-#net.core.rmem_max = 8388608
-#net.core.wmem_max = 8388608
-#net.core.rmem_default = 8388608
-#net.core.wmem_default = 8388608
-#net.core.optmem_max = 8388608
-
 ########## IPv6 Networking ##########
 
 # disallow IPv6 packet forwarding
+net.ipv6.conf.default.forwarding = 0
 net.ipv6.conf.all.forwarding = 0
 
 # number of Router Solicitations to send until assuming no routers are present
 net.ipv6.conf.default.router_solicitations = 0
+net.ipv6.conf.all.router_solicitations = 0
 
 # do not accept Router Preference from RA
 net.ipv6.conf.default.accept_ra_rtr_pref = 0
+net.ipv6.conf.all.accept_ra_rtr_pref = 0
 
 # learn prefix information in router advertisement
 net.ipv6.conf.default.accept_ra_pinfo = 0
+net.ipv6.conf.all.accept_ra_pinfo = 0
 
 # setting controls whether the system will accept Hop Limit settings from a router advertisement
 net.ipv6.conf.default.accept_ra_defrtr = 0
+net.ipv6.conf.all.accept_ra_defrtr = 0
 
 # router advertisements can cause the system to assign a global unicast address to an interface
 net.ipv6.conf.default.autoconf = 0
+net.ipv6.conf.all.autoconf = 0
 
 # number of neighbor solicitations to send out per address
 net.ipv6.conf.default.dad_transmits = 0
+net.ipv6.conf.all.dad_transmits = 0
 
 # number of global unicast IPv6 addresses can be assigned to each interface
 net.ipv6.conf.default.max_addresses = 1
+net.ipv6.conf.all.max_addresses = 1
+
+# enable IPv6 Privacy Extensions (RFC3041) and prefer the temporary address
+net.ipv6.conf.default.use_tempaddr = 2
+net.ipv6.conf.all.use_tempaddr = 2
+
+# ignore all ICMPv6 echo requests
+#net.ipv6.icmp.echo_ignore_all = 1
+#net.ipv6.icmp.echo_ignore_anycast = 1
+#net.ipv6.icmp.echo_ignore_multicast = 1
 ```
