@@ -51,9 +51,9 @@ curl -sSL akas.io/sysctl -o sysctl.conf
 ```properties
 # Name: K4YT3X Hardened sysctl Configuration
 # Author: K4YT3X
+# Contributors: IceCodeNew
 # Date Created: October 5, 2020
-# Last Updated: October 6, 2020
-# Version: 1.1
+# Last Updated: October 7, 2020
 
 # Licensed under the GNU General Public License Version 3 (GNU GPL v3),
 #   available at: https://www.gnu.org/licenses/gpl-3.0.txt
@@ -106,7 +106,10 @@ kernel.kexec_load_disabled = 1
 kernel.unprivileged_userns_clone = 0
 
 # allow for more PIDs
-kernel.pid_max = 65536
+# this value can be up to:
+#   - 32768 (2^15) on a 32-bit system
+#   - 4194304 (2^22) on a 64-bit system
+kernel.pid_max = 4194304
 
 # reboot machine after kernel panic
 #kernel.panic = 10
@@ -135,7 +138,10 @@ fs.protected_fifos = 2
 fs.protected_regular = 2
 
 # increase system file descriptor limit
-fs.file-max = 65535
+# this value can be up to:
+#   - 2147483647 (0x7fffffff) on a 32-bit system
+#   - 9223372036854775807 (0x7fffffffffffffff) on a 64-bit system
+fs.file-max = 9223372036854775807
 
 ########## Virtualization ##########
 
@@ -233,7 +239,7 @@ net.ipv4.tcp_rfc1337 = 1
 net.ipv4.tcp_window_scaling = 0
 
 # increase system IP port limits
-net.ipv4.ip_local_port_range = 2000 65000
+net.ipv4.ip_local_port_range = 1024 65535
 
 # disable TCP timestamps for better CPU utilization
 net.ipv4.tcp_timestamps = 0
