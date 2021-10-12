@@ -13,7 +13,16 @@ This repository hosts my hardened version of `sysctl.conf`. This configuration f
 
 **Please review the configuration file carefully before applying it.** You are responsible for actions done to your system. If you need some guidance understanding what each of the settings is for, [sysctl-explorer](https://sysctl-explorer.net/) might come in handy. You may also consult [Linux's kernel documentation](https://www.kernel.org/doc/Documentation/sysctl/).
 
-Please be aware that this `sysctl.conf` is **designed for 64-bit endpoint hosts that do not act as a router**. If you would like to use this configuration file on a router, please go over the configuration file and make the necessary changes (e.g., set `net.ipv4.ip_forward` to `1`).
+## Assumptions
+
+This configuration file is written with a few assumptions about your OS. You can still use this configuration as a template if your OS does not match these assumptions (e.g., set `net.ipv4.ip_forward` to `1` on a router). Making these assumptions helps us to develop a configuration file with the most number of optimizations enabled for common systems.
+
+- Security is valued over performance and convenience
+- The OS does not act as a router
+- The OS is running on a 64-bit system
+- The OS is on a network that is relatively stable (e.g., wired vs. LTE)
+- No debugging features are required (e.g., no need for GDB/kdump)
+- ICMP echo messages are not regarded as harmful
 
 ## Configuration Deployment
 
