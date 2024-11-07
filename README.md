@@ -143,8 +143,8 @@ kernel.kptr_restrict = 2
 
 ## Short URL for Downloading `sysctl.conf`
 
-For convenience, I have pointed the URL `https://k4t.io/sysctl` to the `sysctl.conf` file. You may therefore download the `sysctl.conf` file with the following command. However, be sure to check the file's integrity after downloading it if you choose to download using this method.
+For convenience, I have pointed the URL `https://kt.ax/sysctl` to the `sysctl.conf` file. You may therefore download the `sysctl.conf` file with the following command. However, be sure to check the file's integrity after downloading it if you choose to download using this method.
 
 ```shell
-curl -L k4t.io/sysctl -o sysctl.conf
+curl -L kt.ax/sysctl -o sysctl.conf
 ```
