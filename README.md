@@ -1,150 +1,113 @@
-# K4YT3X's Hardened sysctl Configuration
+# K4YT3X's Hardened Linux Kernel Parameters
 
-This repository hosts my hardened version of `sysctl.conf`. This configuration file aims to provide better security for Linux systems and improves system performance whenever possible. For example, below are some of the features this configuration file provides.
+This repository hosts an **aggressively** hardened version of `sysctl.conf`. This configuration file aims to provide better security for Linux systems and to improve system performance wherever possible. Below are some of the features this configuration file provides:
 
 - Prevents kernel pointers from being read
-- Disables Ptrace for all programs
-- Disallows core dumping by SUID/GUID programs
+- Disables ptrace for all programs
+- Disallows core dumping by SUID/SGID programs
 - Disables IPv4/IPv6 routing
 - Enables BBR TCP congestion control
 - Enables SYN cookies to mitigate SYN flooding attacks
 - Enables IP reverse path filtering for source validation
-- ...
+- …
 
-**Please review the configuration file carefully before applying it.** You are responsible for actions done to your system. If you need some guidance understanding what each of the settings is for, [sysctl-explorer](https://sysctl-explorer.net/) might come in handy. You may also consult [Linux's kernel documentation](https://www.kernel.org/doc/Documentation/sysctl/).
+**Please review the configuration file carefully before applying it.** You are ultimately responsible for your own system. If you need some guidance understanding what each setting is for, the [sysctl-explorer](https://sysctl-explorer.net/) might come in handy. You may also find [Linux's kernel documentation](https://www.kernel.org/doc/Documentation/sysctl/) useful.
 
 ## Assumptions
 
-This configuration file is written with a few assumptions about your OS. You can still use this configuration as a template if your OS does not match these assumptions (e.g., set `net.ipv4.ip_forward` to `1` on a router). Making these assumptions helps us to develop a configuration file with the most number of optimizations enabled for common systems.
+This configuration file is written with a few assumptions about your system. You can still use this configuration as a template if your system does not match these assumptions (e.g., set `net.ipv4.ip_forward` to `1` if your system also acts as a router). Making these assumptions helps in developing a configuration file that enables as many optimizations as possible for common systems.
 
 - Security is valued over performance and convenience
-- The OS does not act as a router
-- The OS is running on a 64-bit system
-- The OS is on a network that is relatively stable (e.g., wired vs. LTE)
-- No debugging features are required (e.g., no need for GDB/kdump)
-- ICMP echo messages are not regarded as harmful
+- Your system does not act as a router
+- You have a 64-bit system
+- Your system is on a network that is relatively stable (e.g., wired Ethernet)
+- No debugging features are required (e.g., GDB/kdump)
+- ICMP echo and echo reply messages are not considered dangerous
 
-## Configuration Deployment
+## Configuration Basics
 
-Linux kernel configuration files are stored in the directory `/etc/sysctl.d`. Configurations in all files having a suffix of `.conf` will read by the `procps` (a.k.a. `systemd-sysctl`) service. Additionally, the `procps` service also loads configurations from the following directories.
+Linux kernel runtime configuration files are typically stored in the `/etc/sysctl.d` directory, where all `.conf` files are automatically loaded by a service like `systemd-sysctl`. The exact file locations and loading behavior may vary depending on the distribution and the sysctl service in use.
+
+Files are sorted and read by their file names in lexicographic order. **Variables read later will overwrite variables read earlier.** For example, configurations in `20-something.conf` will be read before `99-sysctl.conf`. If the same variable exists in both files, values read from `20-something.conf` will be overwritten by values read from `99-sysctl.conf`:
+
+```shell
+$ cat /etc/sysctl.d/20-something.conf
+net.ipv4.ip_forward = 0
+
+$ cat /etc/sysctl.d/99-sysctl.conf
+net.ipv4.ip_forward = 1
+
+$ sysctl -a | grep net.ipv4.ip_forward
+net.ipv4.ip_forward = 1
+```
+
+Also, sysctl services might load configuration files from multiple paths. For example, the `systemd-sysctl` service also discovers configuration files from these directories in addition to `/etc/sysctl.d`:
 
 - `/run/sysctl.d`
 - `/usr/local/lib/sysctl.d`
 - `/usr/lib/sysctl.d`
 - `/lib/sysctl.d`
 
-Files are sorted and read by their file names in lexicographic order. Variables read later will overwrite variables read earlier. For example, configurations in `20-something.conf` will be read before `99-sysctl.conf`. If a variable exists in both files, values read from `20-something.conf` will be overwritten by values read from `99-sysctl.conf`.
-
-```properties
-# in 20-something.conf
-net.ipv4.ip_forward = 0
-
-# in 99-sysctl.conf
-net.ipv4.ip_forward = 1
-
-# net.ipv4.ip_forward will be 1
-```
-
-### Method 1: Deploy Definitively
-
-By default, on most Linux distributions, the `/etc/sysctl.d/99-sysctl.conf` file is a link to the `/etc/sysctl.conf` file. Therefore, you may write the variables into the `/etc/sysctl.conf`. However, since configuration files with a file name that starts with an alphabetical character sort later in the list than `99-sysctl.conf`, the changes you make in the `/etc/sysctl.conf` might not be the final value loaded into the kernel. To make sure that your changes are loaded into the kernel, you would have to make sure that your configuration file's name is lexicographically the last file in `/etc/sysctl.d`. The filename `z-k4yt3x.conf` will be used as an example in the code snippet below.
-
-This deployment method is suitable for systems that do not expect to have their sysctl configurations updated from this repository anymore. Otherwise, the configuration file's content has to be updated every time a new update form this repository is installed.
+It is a good idea to verify that no other sysctl configuration files are being loaded, to ensure that your settings are not overridden by values in another file. On a system using systemd, you can check which configuration files are loaded and in what order by running:
 
 ```shell
-# download the configuration file from GitHub using curl
-curl https://raw.githubusercontent.com/k4yt3x/sysctl/master/sysctl.conf -o ~/sysctl.conf
-
-# you may also download with wget or other methods if curl is not available
-wget https://raw.githubusercontent.com/k4yt3x/sysctl/master/sysctl.conf -O ~/sysctl.conf
-
-# move the configuration file into the sysctl configuration directory
-sudo mv ~/sysctl.conf /etc/sysctl.d/z-k4yt3x.conf
-
-# make sure the file has correct ownership and permissions
-sudo chown root:root /etc/sysctl.d/z-k4yt3x.conf
-sudo chmod 644 /etc/sysctl.d/z-k4yt3x.conf
+systemd-analyze cat-config sysctl
 ```
 
-### Method 2: Deploy as Template
+## Recommended Deployment Strategy
 
-Alternatively, you can use this configuration file as a template. If you name the configuration file something akin to `/etc/sysctl.d/98-k4yt3x.conf`, you may overwrite values in this configuration file by giving them a new definition the `/etc/sysctl.conf` file.
+I recommend deploying this configuration file as a template, then add your custom override values in another configuration file that will be loaded after the template file (e.g., `/etc/sysctl.d/99-sysctl.conf`). For example, I personally have this template deployed to `/etc/sysctl.d/98-k4yt3x.conf`, then added several override values in `/etc/sysctl.d/99-sysctl.conf`.
 
-The advantage of doing this is that you would not have to change this template file's content every time it is updated in this repository. You can drop the template file in and make any modifications in `/etc/sysctl.conf`.
+The advantage of this approach is ease of maintenance. The same template configuration file can be deployed across multiple machines, while machine-specific customizations are kept in a separate file. This way, you can upgrade the template as new versions are released without having to migrate the customized values. It also makes it easier to see which customizations are applied to a given machine. I will walk you through the deployment steps below.
 
-This method's disadvantage is that values from this template might be overwritten by values in other configurations unknowingly. For example, a `uhd-usrp2.conf` exists on my system, and overwrites the value of `net.core.rmem_max` and `net.core.wmem_max` set in previous configuration files. Packages managers can install new configurations as you install a new package or update your system. Therefore, you will have to be careful that other files do not overwrite your variables.
+First, we need to download the template configuration file from this repository:
 
 ```shell
-# download the configuration file from GitHub using curl
-curl https://raw.githubusercontent.com/k4yt3x/sysctl/master/sysctl.conf -o ~/sysctl.conf
-
-# you may also download with wget or other methods if curl is not available
-wget https://raw.githubusercontent.com/k4yt3x/sysctl/master/sysctl.conf -O ~/sysctl.conf
-
-# move the configuration file into the sysctl configuration directory
-sudo mv ~/sysctl.conf /etc/sysctl.d/98-k4yt3x.conf
-
-# make sure the file has correct ownership and permissions
-sudo chown root:root /etc/sysctl.d/98-k4yt3x.conf
-sudo chmod 644 /etc/sysctl.d/98-k4yt3x.conf
+sudo curl https://raw.githubusercontent.com/k4yt3x/sysctl/master/sysctl.conf -o /etc/sysctl.d/98-k4yt3x.conf
 ```
 
-### Method 3: Custom Order (Personal Recommendation)
+Then, you can add your custom values to a configuration file that will be loaded after the template configuration file, such as `/etc/sysctl.d/99-sysctl.conf`. Here are some custom overrides I have added to one of my workstations for convenience and performance:
 
-To ensure that the configuration files are read in an order you prefer, you may also rename the files to your preference. For example, you can install this template to `/etc/sysctl.d/y-k4yt3x.conf`, then make a symbolic link from `/etc/sysctl.d/z-sysctl.conf` to `/etc/sysctl.conf`. This ensures that the two files are more likely to be read the last.
+```ini
+# Enable unprivileged user namespace cloning for Podman
+kernel.unprivileged_userns_clone = 1
 
-```shell
-# download the configuration file from GitHub using curl
-curl https://raw.githubusercontent.com/k4yt3x/sysctl/master/sysctl.conf -o ~/sysctl.conf
+# Allow debuggers like GDB to ptrace its descendants
+kernel.yama.ptrace_scope = 1
 
-# you may also download with wget or other methods if curl is not available
-wget https://raw.githubusercontent.com/k4yt3x/sysctl/master/sysctl.conf -O ~/sysctl.conf
+# Enable TCP timestamps with RFC 1323 randomized offsets
+net.ipv4.tcp_timestamps = 1
 
-# move the configuration file into the sysctl configuration directory
-sudo mv ~/sysctl.conf /etc/sysctl.d/y-k4yt3x.conf
-
-# make sure the file has correct ownership and permissions
-sudo chown root:root /etc/sysctl.d/y-k4yt3x.conf
-sudo chmod 644 /etc/sysctl.d/y-k4yt3x.conf
-
-# point z-sysctl.conf to /etc/sysctl.conf
-sudo ln -s /etc/sysctl.conf /etc/sysctl.d/z-sysctl.conf
+# Enable SACK to assist congestion control
+net.ipv4.tcp_sack = 1
+net.ipv4.tcp_dsack = 1
+net.ipv4.tcp_fack = 1
 ```
+
+Be aware that values from the template may be overwritten by other configuration files. For example, on my system a file named `uhd-usrp2.conf` is loaded after `99-sysctl.conf` and overrides the values of `net.core.rmem_max` and `net.core.wmem_max` defined earlier. Package managers can add new configuration files when you install or update packages, so you need to be careful that your custom settings are not overridden by those files.
 
 ## Loading and Verifying the Changes
 
-For the changes to be effective, you will have to either reboot your machine or reload the configurations using one of the following commands.
+For the changes to be effective, you will have to reload the sysctl configurations. This can be achieved by either rebooting your machine or reloading the configurations using one of the following commands:
 
 ```shell
-# instruct sysctl to load settings from the configuration file into the live kernel
-# this command allows you to see the variables as they are being loaded
+# Instruct sysctl to load settings from the configuration files into the live kernel
+# This command allows you to see the variables as they are being loaded
 sudo sysctl --system
 
-# alternatively, you can restart the systemd-sysctl service on a system that uses systemd
+# Alternatively, you can restart the systemd-sysctl service on a system that uses systemd
 sudo systemctl restart systemd-sysctl
-
-# procps is an alias of systemd-sysctl
-# restarting either one of procps and systemd-sysctl would work
-sudo systemctl restart procps
 ```
 
-Afterwards, you may verify your changes by dumping all kernel variables. Replace `your.config` in the following command with the name of the variable you would like to check.
+Afterwards, verify your changes by dumping live kernel parameters. Replace `your.config` in the following command with the name of the variable you would like to check:
 
 ```shell
-sudo sysctl -a | grep "your.config"
+sysctl your.config
 ```
 
-For example, the following command prints the value of `kernel.kptr_restrict`.
+For example, the following command prints the value of `kernel.kptr_restrict`:
 
 ```shell
-$ sudo sysctl -a | grep "kernel.kptr_restrict"
+$ sysctl kernel.kptr_restrict
 kernel.kptr_restrict = 2
-```
-
-## Short URL for Downloading `sysctl.conf`
-
-For convenience, I have pointed the URL `https://kt.ax/sysctl` to the `sysctl.conf` file. You may therefore download the `sysctl.conf` file with the following command. However, be sure to check the file's integrity after downloading it if you choose to download using this method.
-
-```shell
-curl -L kt.ax/sysctl -o sysctl.conf
 ```
