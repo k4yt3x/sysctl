@@ -69,9 +69,6 @@ sudo curl https://raw.githubusercontent.com/k4yt3x/sysctl/master/sysctl.conf -o 
 Then, you can add your custom values to a configuration file that will be loaded after the template configuration file, such as `/etc/sysctl.d/99-sysctl.conf`. Here are some custom overrides I have added to one of my workstations for convenience and performance:
 
 ```ini
-# Enable unprivileged user namespace cloning for Podman
-kernel.unprivileged_userns_clone = 1
-
 # Allow debuggers like GDB to ptrace its descendants
 kernel.yama.ptrace_scope = 1
 
@@ -110,4 +107,88 @@ For example, the following command prints the value of `kernel.kptr_restrict`:
 ```shell
 $ sysctl kernel.kptr_restrict
 kernel.kptr_restrict = 2
+```
+
+## Boot Command Line
+
+In addition to the sysctl configuration file, which sets kernel parameters at runtime, some parameters have to be set at boot time via the boot command line. Below are some recommended options that can be set in your bootloader configuration (e.g., GRUB or systemd-boot) to harden your system further:
+
+```ini
+# Treat kernel oops as a panic
+ops=panic
+
+# Let the kernel panic on correctable MCE errors
+mce=0
+
+# Disable merging of slabs of similar sizes
+slab_nomerge
+
+# Fill freed and allocated pages/heap objects with zeros
+init_on_free=1
+init_on_alloc=1
+
+# Enable page poisoning and page ownership tracking
+page_poison=1
+page_owner=1
+
+# Enable SLUB sanity checks, red zoning, and poisoning
+slub_debug=FZP
+
+# Perform usercopy bounds checking
+hardened_usercopy=1
+
+# Force exposed pointers to be hashed
+hash_pointers=always
+
+# Enable page allocator freelist randomization
+page_alloc.shuffle=1
+
+# Randomize kernel stack offset on syscall entry
+randomize_kstack_offset=on
+
+# Disable speculative store bypass
+spec_store_bypass_disable=on
+
+# Enable IOMMU for Intel and AMD systems
+intel_iommu=on
+amd_iommu=on
+
+# Force IOMMU TLB invalidation
+iommu.passthrough=0
+iommu.strict=1
+
+# Disable virtual syscalls
+vsyscall=none
+
+# Disable the 32-bit vDSO
+vdso32=0
+
+# Disable FineIBT since it is weaker than pure KCFI
+cfi=kcfi
+
+# Mitigates all known CPU vulnerabilities
+mitigations=auto,nosmt
+
+# Enable MDS mitigations and disable SMT
+mds=full,nosmt
+
+# Enable Page Table Isolation (PTI) to mitigate Meltdown
+pti=on
+```
+
+Here is the same configuration in a single line suitable for copy-pasting into your bootloader configuration:
+
+```conf
+ops=panic mce=0 slab_nomerge init_on_free=1 init_on_alloc=1 page_poison=1 page_owner=1 slub_debug=FZP hardened_usercopy=1 hash_pointers=always page_alloc.shuffle=1 randomize_kstack_offset=on spec_store_bypass_disable=on intel_iommu=on amd_iommu=on iommu.passthrough=0 iommu.strict=1 vsyscall=none vdso32=0 cfi=kcfi mitigations=auto,nosmt mds=full,nosmt pti=on
+```
+
+You can find more information about these options in [Tails' kernel hardening guide](https://tails.net/contribute/design/kernel_hardening/) and [Linux Kernel Self-Protection Project Recommended Settings](https://kspp.github.io/Recommended_Settings).
+
+Additionally, here are some additional parameters that may be too restrictive for general use, but you may consider adding them depending on your threat model and use case:
+
+```ini
+# Enable kernel lockdown mode
+# Restricts loading of unsigned kernel modules and other facilities
+# https://www.man7.org/linux/man-pages/man7/kernel_lockdown.7.html
+lockdown=confidentiality
 ```
