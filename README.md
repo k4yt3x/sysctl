@@ -123,7 +123,7 @@ In addition to the sysctl configuration file, which sets kernel parameters at ru
 # Treat kernel oops as a panic
 ops=panic
 
-# Let the kernel panic on correctable MCE errors
+# Let the kernel panic on uncorrectable MCE errors
 mce=0
 
 # Disable merging of slabs of similar sizes
