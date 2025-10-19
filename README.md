@@ -201,4 +201,11 @@ lockdown=confidentiality
 # Enforce kernel module signature verification
 # Only allow signed kernel modules to be loaded
 modules.sig_enforce=1
+
+# Enable AppArmor
+apparmor=1
+security=apparmor
+
+# Completely disable IPv6
+ipv6.disable=1
 ```
