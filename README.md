@@ -121,7 +121,7 @@ In addition to the sysctl configuration file, which sets kernel parameters at ru
 
 ```ini
 # Treat kernel oops as a panic
-ops=panic
+oops=panic
 
 # Let the kernel panic on uncorrectable MCE errors
 mce=0
@@ -185,7 +185,7 @@ pti=on
 Here is the same configuration in a single line suitable for copy-pasting into your bootloader configuration:
 
 ```conf
-ops=panic mce=0 slab_nomerge init_on_free=1 init_on_alloc=1 page_poison=1 page_owner=1 slub_debug=FZP hardened_usercopy=1 hash_pointers=always page_alloc.shuffle=1 randomize_kstack_offset=on spec_store_bypass_disable=on intel_iommu=on amd_iommu=on iommu.passthrough=0 iommu.strict=1 vsyscall=none vdso32=0 cfi=kcfi mitigations=auto,nosmt mds=full,nosmt pti=on
+oops=panic mce=0 slab_nomerge init_on_free=1 init_on_alloc=1 page_poison=1 page_owner=1 slub_debug=FZP hardened_usercopy=1 hash_pointers=always page_alloc.shuffle=1 randomize_kstack_offset=on spec_store_bypass_disable=on intel_iommu=on amd_iommu=on iommu.passthrough=0 iommu.strict=1 vsyscall=none vdso32=0 cfi=kcfi mitigations=auto,nosmt mds=full,nosmt pti=on
 ```
 
 You can find more information about these options in [Tails' kernel hardening guide](https://tails.net/contribute/design/kernel_hardening/) and [Linux Kernel Self-Protection Project Recommended Settings](https://kspp.github.io/Recommended_Settings).
