@@ -197,4 +197,8 @@ Additionally, here are some additional parameters that may be too restrictive fo
 # Restricts loading of unsigned kernel modules and other facilities
 # https://www.man7.org/linux/man-pages/man7/kernel_lockdown.7.html
 lockdown=confidentiality
+
+# Enforce kernel module signature verification
+# Only allow signed kernel modules to be loaded
+modules.sig_enforce=1
 ```
