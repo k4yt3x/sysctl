@@ -1,5 +1,11 @@
 # K4YT3X's Hardened Linux Kernel Parameters
 
+> [!IMPORTANT]
+> This documentation contains important information. It is highly recommended that you read through the entire document and do your own research to fully understand the implications of applying this configuration to your own system.
+
+> [!TIP]
+> Don't forget to apply the boot command line options at the end of this page in addition to the sysctl configuration file.
+
 This repository hosts an **aggressively** hardened version of `sysctl.conf`. This configuration file aims to provide better security for Linux systems and to improve system performance wherever possible. Below are some of the features this configuration file provides:
 
 - Prevents kernel pointers from being read
