@@ -21,7 +21,7 @@ This repository hosts an **aggressively** hardened version of `sysctl.conf`. Thi
 
 ## Assumptions
 
-This configuration file is written with a few assumptions about your system. You can still use this configuration as a template if your system does not match these assumptions (e.g., set `net.ipv4.ip_forward` to `1` if your system also acts as a router). Making these assumptions helps in developing a configuration file that enables as many optimizations as possible for common systems.
+This configuration file is written with a few assumptions about your system. You can still use this configuration as a template if your system does not match these assumptions (e.g., override the global and per-interface forwarding settings if your system also acts as a router). Making these assumptions helps in developing a configuration file that enables as many optimizations as possible for common systems.
 
 - Security is valued over performance and convenience
 - Your system does not act as a router
@@ -72,35 +72,25 @@ First, we need to download the template configuration file from this repository:
 sudo curl https://raw.githubusercontent.com/k4yt3x/sysctl/master/sysctl.conf -o /etc/sysctl.d/98-k4yt3x.conf
 ```
 
-Then, you can add your custom values to a configuration file that will be loaded after the template configuration file, such as `/etc/sysctl.d/99-sysctl.conf`. Here are some custom overrides I have added to one of my workstations for convenience and performance:
+Then, you can add your custom values to a configuration file that will be loaded after the template configuration file, such as `/etc/sysctl.d/99-sysctl.conf`. Here is a custom override for a development machine that requires debugging:
 
 ```ini
 # Allow debuggers like GDB to ptrace its descendants
 kernel.yama.ptrace_scope = 1
-
-# Enable TCP timestamps with RFC 1323 randomized offsets
-net.ipv4.tcp_timestamps = 1
-
-# Enable SACK to assist congestion control
-net.ipv4.tcp_sack = 1
-net.ipv4.tcp_dsack = 1
-net.ipv4.tcp_fack = 1
 ```
 
 Be aware that values from the template may be overwritten by other configuration files. For example, on my system a file named `uhd-usrp2.conf` is loaded after `99-sysctl.conf` and overrides the values of `net.core.rmem_max` and `net.core.wmem_max` defined earlier. Package managers can add new configuration files when you install or update packages, so you need to be careful that your custom settings are not overridden by those files.
 
 ## Loading and Verifying the Changes
 
-For the changes to be effective, you will have to reload the sysctl configurations. This can be achieved by either rebooting your machine or reloading the configurations using one of the following commands:
+For the changes to be effective, you will have to reload the sysctl configurations. This can be achieved by either rebooting your machine or reloading the configurations using systemd-sysctl:
 
 ```shell
-# Instruct sysctl to load settings from the configuration files into the live kernel
-# This command allows you to see the variables as they are being loaded
-sudo sysctl --system
-
-# Alternatively, you can restart the systemd-sysctl service on a system that uses systemd
+# Restart the systemd-sysctl service
 sudo systemctl restart systemd-sysctl
 ```
+
+Note that some options require a reboot to take effect.
 
 Afterwards, verify your changes by dumping live kernel parameters. Replace `your.config` in the following command with the name of the variable you would like to check:
 
@@ -122,9 +112,6 @@ In addition to the sysctl configuration file, which sets kernel parameters at ru
 ```ini
 # Treat kernel oops as a panic
 oops=panic
-
-# Let the kernel panic on uncorrectable MCE errors
-mce=0
 
 # Disable merging of slabs of similar sizes
 slab_nomerge
@@ -155,9 +142,8 @@ randomize_kstack_offset=on
 # Disable speculative store bypass
 spec_store_bypass_disable=on
 
-# Enable IOMMU for Intel and AMD systems
+# Enable IOMMU for Intel systems
 intel_iommu=on
-amd_iommu=on
 
 # Force IOMMU TLB invalidation
 iommu.passthrough=0
@@ -185,7 +171,7 @@ pti=on
 Here is the same configuration in a single line suitable for copy-pasting into your bootloader configuration:
 
 ```conf
-oops=panic mce=0 slab_nomerge init_on_free=1 init_on_alloc=1 page_poison=1 page_owner=1 slub_debug=FZP hardened_usercopy=1 hash_pointers=always page_alloc.shuffle=1 randomize_kstack_offset=on spec_store_bypass_disable=on intel_iommu=on amd_iommu=on iommu.passthrough=0 iommu.strict=1 vsyscall=none vdso32=0 cfi=kcfi mitigations=auto,nosmt mds=full,nosmt pti=on
+oops=panic slab_nomerge init_on_free=1 init_on_alloc=1 page_poison=1 page_owner=1 slub_debug=FZP hardened_usercopy=1 hash_pointers=always page_alloc.shuffle=1 randomize_kstack_offset=on spec_store_bypass_disable=on intel_iommu=on iommu.passthrough=0 iommu.strict=1 vsyscall=none vdso32=0 cfi=kcfi mitigations=auto,nosmt mds=full,nosmt pti=on
 ```
 
 You can find more information about these options in [Tails' kernel hardening guide](https://tails.net/contribute/design/kernel_hardening/) and [Linux Kernel Self-Protection Project Recommended Settings](https://kspp.github.io/Recommended_Settings).
@@ -200,7 +186,7 @@ lockdown=confidentiality
 
 # Enforce kernel module signature verification
 # Only allow signed kernel modules to be loaded
-modules.sig_enforce=1
+module.sig_enforce=1
 
 # Enable AppArmor
 apparmor=1
